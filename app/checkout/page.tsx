@@ -43,6 +43,42 @@ export default function CheckoutPage() {
   // Erro (se precisar mostrar)
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
+  // Expiração
+  const [isExpired, setIsExpired] = useState(false);
+
+  useEffect(() => {
+    const checkExpiration = () => {
+      // 1. ler URL
+      const urlParams = new URLSearchParams(window.location.search);
+      const novoAcesso = urlParams.get("novo_acesso");
+      
+      // 2. se novo acesso, resetar relógio
+      if (novoAcesso === "1") {
+        localStorage.setItem("carrinho_session_start_v1", String(Date.now()));
+        window.history.replaceState(null, '', window.location.pathname);
+      }
+      
+      // 3. checar tempo
+      const startStr = localStorage.getItem("carrinho_session_start_v1");
+      if (!startStr) {
+        localStorage.setItem("carrinho_session_start_v1", String(Date.now()));
+      } else {
+        const start = Number(startStr);
+        const elapsed = Date.now() - start;
+        const LIMIT = 30 * 60 * 1000; // 30 min
+        if (elapsed > LIMIT) {
+          setIsExpired(true);
+        } else {
+          setIsExpired(false);
+        }
+      }
+    };
+
+    checkExpiration();
+    const t = setInterval(checkExpiration, 10000); // checa a cada 10s
+    return () => clearInterval(t);
+  }, []);
+
   useEffect(() => {
     try {
       const raw = localStorage.getItem(LS_KEY);
@@ -134,6 +170,26 @@ export default function CheckoutPage() {
     } finally {
       setSending(false);
     }
+  }
+
+  if (isExpired) {
+    return (
+      <main style={{ maxWidth: 720, margin: "0 auto", padding: 0 }}>
+        <div style={{ position: "sticky", top: 0, zIndex: 50, background: "#160E79", height: 64, display: "flex", alignItems: "center", padding: "0 16px", borderBottom: "1px solid rgba(255,255,255,0.12)" }}>
+          <a href="/carrinho" style={{ display: "inline-flex", alignItems: "center", gap: 12, textDecoration: "none" }}>
+            <img src="/logo-livraria.png" alt="Livraria Shalom" style={{ height: 40, width: 40, objectFit: "contain" }} />
+            <span style={{ color: "#fff", fontWeight: 800, letterSpacing: 0.2 }}>Livraria Shalom</span>
+          </a>
+        </div>
+        <div style={{ padding: "40px 20px", textAlign: "center", display: "flex", flexDirection: "column", gap: 16, alignItems: "center" }}>
+          <div style={{ background: "rgba(255,0,0,0.1)", color: "red", padding: "20px", borderRadius: "16px", border: "1px solid red", maxWidth: 400 }}>
+            <h2 style={{ fontSize: 22, marginBottom: 12 }}>Tempo Esgotado ⏳</h2>
+            <p style={{ margin: 0, opacity: 0.9 }}>Seu pedido não pode ser finalizado. O limite de tempo (30 minutos) de exclusividade foi atingido.</p>
+            <p style={{ marginTop: 12, fontSize: 14 }}>Por favor, retorne ao WhatsApp e solicite um novo link de atendimento para retomar sua compra.</p>
+          </div>
+        </div>
+      </main>
+    );
   }
 
   return (
