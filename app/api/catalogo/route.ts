@@ -49,6 +49,21 @@ export async function GET() {
     return NextResponse.json({ produtos });
   } catch (err: any) {
     console.error("Erro ao consultar produtos:", err);
+    
+    // TRUQUE DE DEBUG: se ele der "does not exist", vamos listar as tabelas que ele está enxergando pra matar a charada!
+    if (err?.message?.includes("does not exist")) {
+      try {
+        const { rows } = await pool.query("SELECT table_name FROM information_schema.tables WHERE table_schema='public'");
+        const tableNames = rows.map((r: any) => r.table_name).join(", ");
+        return NextResponse.json(
+          { error: `A tabela produtos_omie não existe NESTE banco de dados (databases). As tabelas que existem aqui são: [${tableNames}]` },
+          { status: 500 }
+        );
+      } catch (debugErr) {
+        // Ignora e cai no erro normal
+      }
+    }
+
     return NextResponse.json(
       { error: err?.message || "Erro ao consultar banco de dados" },
       { status: 500 }
