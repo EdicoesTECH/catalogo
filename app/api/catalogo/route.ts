@@ -30,7 +30,7 @@ export async function GET() {
          COALESCE(profundidade, 0)     AS profundidade,
          COALESCE(peso_bruto, 0)       AS peso_bruto,
          COALESCE(peso_liq, 0)         AS peso_liq
-       FROM produtos
+       FROM produtos_omie
        WHERE inativo = false OR inativo IS NULL
        ORDER BY descricao`
     );
