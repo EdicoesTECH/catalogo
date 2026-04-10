@@ -23,15 +23,15 @@ export async function GET() {
          codigo_produto,
          COALESCE(descricao, '')       AS descricao,
          COALESCE(familia, '')         AS familia,
-         COALESCE(preco, 0)            AS preco,
-         COALESCE(imagem_url, '')      AS imagem_url,
+         COALESCE("nPrecoUnitario", 0) AS preco,
+         COALESCE(url_imagem, '')      AS imagem_url,
          COALESCE(altura, 0)           AS altura,
          COALESCE(largura, 0)          AS largura,
          COALESCE(profundidade, 0)     AS profundidade,
          COALESCE(peso_bruto, 0)       AS peso_bruto,
          COALESCE(peso_liq, 0)         AS peso_liq
        FROM produtos_omie
-       WHERE inativo = false OR inativo IS NULL
+       WHERE inativo IS NULL OR inativo = 'N' OR inativo = 'false' OR inativo = ''
        ORDER BY descricao`
     );
 
@@ -49,21 +49,6 @@ export async function GET() {
     return NextResponse.json({ produtos });
   } catch (err: any) {
     console.error("Erro ao consultar produtos:", err);
-    
-    // TRUQUE DE DEBUG: se ele der "does not exist", vamos listar as tabelas que ele está enxergando pra matar a charada!
-    if (err?.message?.includes("does not exist")) {
-      try {
-        const { rows } = await pool.query("SELECT table_name FROM information_schema.tables WHERE table_schema='public'");
-        const tableNames = rows.map((r: any) => r.table_name).join(", ");
-        return NextResponse.json(
-          { error: `A tabela produtos_omie não existe NESTE banco de dados (databases). As tabelas que existem aqui são: [${tableNames}]` },
-          { status: 500 }
-        );
-      } catch (debugErr) {
-        // Ignora e cai no erro normal
-      }
-    }
-
     return NextResponse.json(
       { error: err?.message || "Erro ao consultar banco de dados" },
       { status: 500 }
