@@ -45,45 +45,32 @@ export default function CarrinhoPage() {
   const [isExpired, setIsExpired] = useState(false);
 
   useEffect(() => {
+    // Detecta se é um clique novo no link (aba/janela nova) via sessionStorage.
+    // sessionStorage zera ao abrir aba nova, mas persiste em refresh e navegação interna.
+    const jaInicializado = sessionStorage.getItem("carrinho_tab_init");
+    if (!jaInicializado) {
+      // Nova aba = novo acesso do cliente → reinicia sessão e timer
+      sessionStorage.setItem("carrinho_tab_init", "1");
+      localStorage.setItem(LS_SESSION_KEY, newSessionId());
+      localStorage.setItem("carrinho_session_start_v1", String(Date.now()));
+      localStorage.removeItem(LS_KEY);
+      setItens({});
+    }
+
     const checkExpiration = () => {
-      // 1. ler URL
-      const urlParams = new URLSearchParams(window.location.search);
-      const novoAcesso = urlParams.get("novo_acesso");
-      
-      // 2. se novo acesso, resetar relógio
-      if (novoAcesso === "1") {
-        localStorage.setItem("carrinho_session_start_v1", String(Date.now()));
-        // Limpa a URL p/ não ficar resetando ao atualizar a página
-        window.history.replaceState(null, '', window.location.pathname);
-      }
-      
-      // 3. checar tempo
       const startStr = localStorage.getItem("carrinho_session_start_v1");
       if (!startStr) {
         localStorage.setItem("carrinho_session_start_v1", String(Date.now()));
       } else {
-        const start = Number(startStr);
-        const elapsed = Date.now() - start;
+        const elapsed = Date.now() - Number(startStr);
         const LIMIT = 30 * 60 * 1000; // 30 min
-        if (elapsed > LIMIT) {
-          setIsExpired(true);
-        } else {
-          setIsExpired(false);
-        }
+        setIsExpired(elapsed > LIMIT);
       }
     };
 
     checkExpiration();
-    const t = setInterval(checkExpiration, 10000); // checa a cada 10s
+    const t = setInterval(checkExpiration, 10000);
     return () => clearInterval(t);
-  }, []);
-
-  // cria session_id se não existir
-  useEffect(() => {
-    try {
-      const existing = localStorage.getItem(LS_SESSION_KEY);
-      if (!existing) localStorage.setItem(LS_SESSION_KEY, newSessionId());
-    } catch {}
   }, []);
 
   // carregar carrinho salvo

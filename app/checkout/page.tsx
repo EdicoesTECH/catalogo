@@ -48,34 +48,18 @@ export default function CheckoutPage() {
 
   useEffect(() => {
     const checkExpiration = () => {
-      // 1. ler URL
-      const urlParams = new URLSearchParams(window.location.search);
-      const novoAcesso = urlParams.get("novo_acesso");
-      
-      // 2. se novo acesso, resetar relógio
-      if (novoAcesso === "1") {
-        localStorage.setItem("carrinho_session_start_v1", String(Date.now()));
-        window.history.replaceState(null, '', window.location.pathname);
-      }
-      
-      // 3. checar tempo
       const startStr = localStorage.getItem("carrinho_session_start_v1");
       if (!startStr) {
-        localStorage.setItem("carrinho_session_start_v1", String(Date.now()));
-      } else {
-        const start = Number(startStr);
-        const elapsed = Date.now() - start;
-        const LIMIT = 30 * 60 * 1000; // 30 min
-        if (elapsed > LIMIT) {
-          setIsExpired(true);
-        } else {
-          setIsExpired(false);
-        }
+        setIsExpired(true);
+        return;
       }
+      const elapsed = Date.now() - Number(startStr);
+      const LIMIT = 30 * 60 * 1000;
+      setIsExpired(elapsed > LIMIT);
     };
 
     checkExpiration();
-    const t = setInterval(checkExpiration, 10000); // checa a cada 10s
+    const t = setInterval(checkExpiration, 10000);
     return () => clearInterval(t);
   }, []);
 
