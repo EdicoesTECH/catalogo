@@ -31,7 +31,12 @@ export async function GET() {
          COALESCE(peso_bruto, 0)       AS peso_bruto,
          COALESCE(peso_liq, 0)         AS peso_liq
        FROM produtos_omie
-       WHERE inativo IS NULL OR inativo = 'N' OR inativo = 'false' OR inativo = ''
+       WHERE (inativo IS NULL OR inativo = 'N' OR inativo = 'false' OR inativo = '')
+         AND UPPER(TRIM(familia)) NOT IN (
+           'BONE','USO E CONSUMO','ACESSORIOS','TE SEGUIREI',
+           'CAIXAS','SAZONAIS','LANCHONETE','MATERIAL DE ESCRITÓRIO',
+           'EMBALAGENS','MANUAL'
+         )
        ORDER BY descricao`
     );
 
