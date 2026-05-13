@@ -147,9 +147,8 @@ export default function CheckoutPage() {
       localStorage.removeItem(LS_KEY);
       clearForm();
 
-      // alerta verde e fecha a aba após 3 segundos
-      showToast("Pedido enviado! Retorne ao WhatsApp para concluir o pagamento.");
-      window.setTimeout(() => window.close(), 3000);
+      // redireciona para página de agradecimento
+      window.location.href = "/obrigado";
     } catch (e: any) {
       setErrorMsg(e?.message || "Erro desconhecido");
     } finally {
