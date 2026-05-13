@@ -10,8 +10,11 @@ export default function ObrigadoPage() {
     localStorage.removeItem("carrinho_session_start_v1");
     sessionStorage.removeItem("carrinho_tab_init");
 
-    // Fecha a aba após 5 segundos
-    const t = window.setTimeout(() => window.close(), 5000);
+    // Fecha a aba após 5 segundos (trick para abas abertas por link externo)
+    const t = window.setTimeout(() => {
+      window.open("", "_self", "");
+      window.close();
+    }, 5000);
     return () => window.clearTimeout(t);
   }, []);
 
