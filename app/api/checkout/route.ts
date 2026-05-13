@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { pool } from "@/app/lib/db";
 
 type Body = {
   customer: { name: string; cpf: string; phone: string; email: string };
@@ -69,14 +70,21 @@ export async function POST(req: Request) {
 
     if (!Object.keys(cart).length) throw new Error("Carrinho vazio");
 
-    // --- Enriquecer itens consultando o catálogo (server-side) ---
-    const catalogRes = await fetch(new URL("/api/catalogo", req.url), { cache: "no-store" });
-    const catalogJson = await catalogRes.json();
-    if (!catalogRes.ok) {
-      throw new Error(catalogJson?.error || "Falha ao consultar catálogo para calcular totais");
-    }
-
-    const produtos: Produto[] = catalogJson?.produtos || [];
+    // --- Enriquecer itens consultando o banco diretamente ---
+    const { rows: produtos } = await pool.query<Produto>(
+      `SELECT
+         codigo_produto,
+         COALESCE(descricao, '')       AS descricao,
+         COALESCE(familia, '')         AS familia,
+         COALESCE("nPrecoUnitario", 0) AS preco,
+         COALESCE(url_imagem, '')      AS imagem_url,
+         COALESCE(altura, 0)           AS altura,
+         COALESCE(largura, 0)          AS largura,
+         COALESCE(profundidade, 0)     AS profundidade,
+         COALESCE(peso_bruto, 0)       AS peso_bruto,
+         COALESCE(peso_liq, 0)         AS peso_liq
+       FROM produtos_omie`
+    );
     const map = new Map(produtos.map((p) => [String(p.codigo_produto), p]));
 
 const itemsDetailed = Object.entries(cart).map(([codigo_produto, qtd]) => {
