@@ -4,10 +4,10 @@ import { useEffect } from "react";
 
 export default function ObrigadoPage() {
   useEffect(() => {
-    // Expira a sessão para o cliente não voltar ao carrinho
+    // Expira a sessão — seta o timer como já vencido para bloquear o retorno ao carrinho
     localStorage.removeItem("carrinho_omie_itens_v1");
     localStorage.removeItem("carrinho_session_id_v1");
-    localStorage.removeItem("carrinho_session_start_v1");
+    localStorage.setItem("carrinho_session_start_v1", "0"); // força expiração imediata
     sessionStorage.removeItem("carrinho_tab_init");
 
     // Fecha a aba após 5 segundos (trick para abas abertas por link externo)
