@@ -143,12 +143,13 @@ export default function CheckoutPage() {
       const data = await r.json();
       if (!r.ok) throw new Error(data?.error || "Falha ao enviar pedido");
 
-      // limpar carrinho e formulário (mantém sua lógica)
+      // limpar carrinho e formulário
       localStorage.removeItem(LS_KEY);
       clearForm();
 
-      // alerta verde
+      // alerta verde e fecha a aba após 3 segundos
       showToast("Pedido enviado! Retorne ao WhatsApp para concluir o pagamento.");
+      window.setTimeout(() => window.close(), 3000);
     } catch (e: any) {
       setErrorMsg(e?.message || "Erro desconhecido");
     } finally {
