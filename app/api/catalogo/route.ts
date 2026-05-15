@@ -37,6 +37,7 @@ export async function GET() {
            'CAIXAS','SAZONAIS','LANCHONETE','MATERIAL DE ESCRITÓRIO',
            'EMBALAGENS','MANUAL'
          )
+         AND codigo_produto NOT IN ('2034036532','1856014425')
        ORDER BY descricao`
     );
 
