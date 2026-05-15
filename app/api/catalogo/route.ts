@@ -38,6 +38,7 @@ export async function GET() {
            'EMBALAGENS','MANUAL'
          )
          AND codigo_produto NOT IN ('2034036532','1856014425')
+         AND COALESCE("nPrecoUnitario", 0) > 0
        ORDER BY descricao`
     );
 
