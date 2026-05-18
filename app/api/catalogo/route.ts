@@ -5,6 +5,7 @@ export const dynamic = "force-dynamic";
 
 type Produto = {
   codigo_produto: string;
+  codigo: string;
   descricao: string;
   familia: string;
   preco: number;
@@ -21,6 +22,7 @@ export async function GET() {
     const { rows } = await pool.query<Produto>(
       `SELECT
          codigo_produto,
+         COALESCE(codigo, '')          AS codigo,
          COALESCE(descricao, '')       AS descricao,
          COALESCE(familia, '')         AS familia,
          COALESCE("nPrecoUnitario", 0) AS preco,
