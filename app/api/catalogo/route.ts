@@ -34,6 +34,7 @@ export async function GET() {
          COALESCE(peso_liq, 0)         AS peso_liq
        FROM produtos_omie
        WHERE (inativo IS NULL OR inativo = 'N' OR inativo = 'false' OR inativo = '')
+         AND (bloqueado IS NULL OR bloqueado = 'N' OR bloqueado = 'false' OR bloqueado = '')
          AND UPPER(TRIM(familia)) NOT IN (
            'BONE','USO E CONSUMO','ACESSORIOS','TE SEGUIREI',
            'CAIXAS','SAZONAIS','LANCHONETE','MATERIAL DE ESCRITÓRIO',
