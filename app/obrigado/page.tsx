@@ -58,9 +58,9 @@ export default function ObrigadoPage() {
           Pedido enviado com sucesso!
         </h1>
 
-        <p style={{ fontSize: 16, opacity: 0.85, margin: 0, maxWidth: 380 }}>
+        <p style={{ fontSize: 16, color: "rgba(0,0,0,0.7)", margin: 0, maxWidth: 380 }}>
           Agradecemos pela sua compra! 🎉<br />
-          Agora <strong>retorne ao WhatsApp</strong> para concluir o pagamento.
+          Agora <strong style={{ color: "#000" }}>retorne ao WhatsApp</strong> para concluir o pagamento.
         </p>
 
         <a
@@ -79,7 +79,7 @@ export default function ObrigadoPage() {
           Ir para o WhatsApp
         </a>
 
-        <p style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", margin: 0 }}>
+        <p style={{ fontSize: 13, color: "rgba(0,0,0,0.4)", margin: 0 }}>
           Redirecionando automaticamente em {countdown}s...
         </p>
       </div>

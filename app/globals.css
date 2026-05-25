@@ -1,11 +1,11 @@
 :root{
   --blue:#160E79;
-  --bg:#0b0b0f;
-  --card:#11131a;
-  --border:rgba(255,255,255,.10);
-  --muted:rgba(255,255,255,.72);
-  --text:rgba(255,255,255,.92);
-  --shadow: 0 14px 40px rgba(0,0,0,.35);
+  --bg:#f4f4f8;
+  --card:#ffffff;
+  --border:rgba(0,0,0,.10);
+  --muted:rgba(0,0,0,.55);
+  --text:rgba(0,0,0,.87);
+  --shadow: 0 4px 20px rgba(0,0,0,.08);
   --radius: 14px;
   --radius-sm: 10px;
 }
@@ -14,8 +14,7 @@
 html,body{ height:100%; }
 body{
   margin:0;
-  background: radial-gradient(1000px 500px at 50% -200px, rgba(22,14,121,.35), transparent 60%),
-              var(--bg);
+  background: var(--bg);
   color:var(--text);
   font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Apple Color Emoji","Segoe UI Emoji";
 }
@@ -72,9 +71,9 @@ a{ color:inherit; }
 }
 
 .tab{
-  border:1px solid rgba(255,255,255,.18);
+  border:1px solid rgba(0,0,0,.15);
   background:transparent;
-  color:rgba(255,255,255,.9);
+  color:rgba(0,0,0,.75);
   padding:10px 14px;
   border-radius:999px;
   cursor:pointer;
@@ -82,22 +81,23 @@ a{ color:inherit; }
   transition: .15s ease;
 }
 
-.tab:hover{ background:rgba(255,255,255,.06); }
+.tab:hover{ background:rgba(0,0,0,.05); }
 .tab.active{
-  border-color:#fff;
-  background:rgba(255,255,255,.10);
+  border-color: var(--blue);
+  background:rgba(22,14,121,.08);
+  color: var(--blue);
 }
 
 .input{
   width:100%;
   padding:12px 14px;
   border-radius:12px;
-  border:1px solid rgba(255,255,255,.16);
-  background: rgba(255,255,255,.03);
+  border:1px solid rgba(0,0,0,.15);
+  background: #fff;
   color:var(--text);
   outline:none;
 }
-.input:focus{ border-color:rgba(255,255,255,.30); }
+.input:focus{ border-color:rgba(0,0,0,.35); }
 
 .grid{
   margin-top:16px;
@@ -108,7 +108,7 @@ a{ color:inherit; }
 
 .card{
   border:1px solid var(--border);
-  background:rgba(255,255,255,.03);
+  background:#fff;
   border-radius:var(--radius);
   overflow:hidden;
   box-shadow: var(--shadow);
@@ -118,7 +118,7 @@ a{ color:inherit; }
 
 .thumb{
   aspect-ratio: 3/4;
-  background:#0f1117;
+  background:#eeeef2;
 }
 .thumb img{
   width:100%;
@@ -152,7 +152,7 @@ a{ color:inherit; }
 
 .badge{
   font-size:12px;
-  opacity:.75;
+  opacity:.65;
   font-weight:700;
 }
 
@@ -160,14 +160,14 @@ a{ color:inherit; }
   width:100%;
   padding:10px 12px;
   border-radius:12px;
-  border:1px solid rgba(255,255,255,.20);
-  background:rgba(255,255,255,.06);
-  color:#fff;
+  border:1px solid rgba(22,14,121,.25);
+  background:rgba(22,14,121,.07);
+  color: var(--blue);
   cursor:pointer;
   font-weight:800;
   transition:.15s ease;
 }
-.btn:hover{ background:rgba(255,255,255,.10); }
+.btn:hover{ background:rgba(22,14,121,.14); }
 
 .qty{
   display:grid;
@@ -180,9 +180,9 @@ a{ color:inherit; }
   width:40px;
   height:40px;
   border-radius:12px;
-  border:1px solid rgba(255,255,255,.20);
-  background:rgba(255,255,255,.06);
-  color:#fff;
+  border:1px solid rgba(0,0,0,.15);
+  background:rgba(0,0,0,.04);
+  color: var(--blue);
   cursor:pointer;
   font-weight:900;
 }
@@ -192,7 +192,7 @@ a{ color:inherit; }
   bottom:0;
   z-index:40;
   border-top:1px solid var(--border);
-  background:rgba(0,0,0,.72);
+  background:rgba(255,255,255,.92);
   backdrop-filter: blur(8px);
   padding:12px 16px;
 }
@@ -215,6 +215,6 @@ a{ color:inherit; }
   padding:10px 14px;
   border-radius:12px;
   border:1px solid rgba(255,255,255,.25);
-  box-shadow: 0 10px 30px rgba(0,0,0,.35);
+  box-shadow: 0 10px 30px rgba(0,0,0,.15);
   font-weight:900;
 }

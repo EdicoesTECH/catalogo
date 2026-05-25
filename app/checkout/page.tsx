@@ -138,9 +138,9 @@ export default function CheckoutPage() {
       width: "100%",
       padding: "12px 14px",
       borderRadius: 12,
-      border: `1px solid ${touched && !valid ? "#ef4444" : "#333"}`,
-      background: "rgba(255,255,255,0.05)",
-      color: "inherit",
+      border: `1px solid ${touched && !valid ? "#ef4444" : "rgba(0,0,0,.15)"}`,
+      background: "#fff",
+      color: "#000",
       fontSize: 14,
       fontFamily: "inherit",
     };
@@ -255,13 +255,13 @@ export default function CheckoutPage() {
       {pedidoEnviado && (
         <div style={{
           position: "fixed", inset: 0, zIndex: 9999,
-          background: "rgba(0,0,0,0.75)",
+          background: "rgba(0,0,0,0.55)",
           display: "flex", alignItems: "center", justifyContent: "center",
           padding: 20,
         }}>
           <div style={{
-            background: "#11131a",
-            border: "1px solid rgba(255,255,255,0.12)",
+            background: "#fff",
+            border: "1px solid rgba(0,0,0,0.10)",
             borderRadius: 20,
             padding: "36px 28px",
             maxWidth: 400,
@@ -271,9 +271,9 @@ export default function CheckoutPage() {
           }}>
             <div style={{ fontSize: 56 }}>✅</div>
             <h2 style={{ margin: 0, fontSize: 22, fontWeight: 800 }}>Pedido enviado!</h2>
-            <p style={{ margin: 0, fontSize: 15, color: "rgba(255,255,255,0.7)", lineHeight: 1.6 }}>
+            <p style={{ margin: 0, fontSize: 15, color: "rgba(0,0,0,0.6)", lineHeight: 1.6 }}>
               Seu pedido foi recebido com sucesso.<br />
-              Agora <strong style={{ color: "#fff" }}>retorne ao WhatsApp</strong> para concluir o pagamento.
+              Agora <strong style={{ color: "#000" }}>retorne ao WhatsApp</strong> para concluir o pagamento.
             </p>
             <a
               href={WPP_URL}
