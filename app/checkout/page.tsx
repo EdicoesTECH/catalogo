@@ -5,23 +5,46 @@ import { useEffect, useMemo, useState } from "react";
 const LS_KEY = "carrinho_omie_itens_v1";
 const LS_SESSION_KEY = "carrinho_session_id_v1";
 
-function onlyDigits(s: string) {
-  return (s || "").replace(/\D/g, "");
+function formatBRL(n: number) {
+  const v = Number(n || 0);
+  return "R$ " + v.toFixed(2).replace(".", ",");
 }
 
-function isValidEmail(email: string) {
-  const e = (email || "").trim();
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
-}
+type Produto = {
+  codigo_produto: string;
+  descricao: string;
+  familia: string;
+  preco: number;
+  imagem_url: string;
+};
 
 export default function CheckoutPage() {
   const [itens, setItens] = useState<Record<string, number>>({});
+  const [produtos, setProdutos] = useState<Produto[]>([]);
   const [sending, setSending] = useState(false);
   const [pedidoEnviado, setPedidoEnviado] = useState(false);
   const [countdown, setCountdown] = useState(10);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const WPP_URL = "https://wa.me/558585871467";
 
+  // Carrega carrinho
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(LS_KEY);
+      if (raw) setItens(JSON.parse(raw));
+    } catch {}
+  }, []);
+
+  // Carrega catálogo para exibir descrição/preço
+  useEffect(() => {
+    fetch("/api/catalogo", { cache: "no-store" })
+      .then((r) => r.json())
+      .then((data) => setProdutos(data?.produtos || []))
+      .catch(() => {});
+  }, []);
+
+  // Countdown após pedido enviado
   useEffect(() => {
     if (!pedidoEnviado) return;
     setCountdown(10);
@@ -38,189 +61,71 @@ export default function CheckoutPage() {
     return () => clearInterval(interval);
   }, [pedidoEnviado]);
 
-  // Toast (alerta verde)
-  const [toast, setToast] = useState<string | null>(null);
-  function showToast(msg: string) {
-    setToast(msg);
-    window.setTimeout(() => setToast(null), 2200);
-  }
-
-  // Cliente
-  const [name, setName] = useState("");
-  const [cpf, setCpf] = useState("");
-  const [phone, setPhone] = useState("");
-  const [email, setEmail] = useState("");
-
-  // Endereço
-  const [cep, setCep] = useState("");
-  const [street, setStreet] = useState("");
-  const [number, setNumber] = useState("");
-  const [complement, setComplement] = useState("");
-  const [neighborhood, setNeighborhood] = useState("");
-  const [city, setCity] = useState("");
-  const [stateUF, setStateUF] = useState("");
-
-  const [cepLoading, setCepLoading] = useState(false);
-  const [touched, setTouched] = useState(false);
-
-  // Erro (se precisar mostrar)
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
-
   // Expiração
   const [isExpired, setIsExpired] = useState(false);
-
   useEffect(() => {
-    const checkExpiration = () => {
+    const check = () => {
       const startStr = localStorage.getItem("carrinho_session_start_v1");
-      if (!startStr) {
-        setIsExpired(true);
-        return;
-      }
+      if (!startStr) { setIsExpired(true); return; }
       const elapsed = Date.now() - Number(startStr);
-      const LIMIT = 30 * 60 * 1000;
-      setIsExpired(elapsed > LIMIT);
+      setIsExpired(elapsed > 30 * 60 * 1000);
     };
-
-    checkExpiration();
-    const t = setInterval(checkExpiration, 10000);
+    check();
+    const t = setInterval(check, 10000);
     return () => clearInterval(t);
   }, []);
 
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem(LS_KEY);
-      if (raw) setItens(JSON.parse(raw));
-    } catch {}
-  }, []);
-
-  const itemsCount = useMemo(
-    () => Object.values(itens).reduce((a, b) => a + b, 0),
-    [itens]
+  const pmap = useMemo(
+    () => new Map(produtos.map((p) => [p.codigo_produto, p])),
+    [produtos]
   );
 
-  // Busca endereço pelo CEP via ViaCEP
-  async function fetchCep(value: string) {
-    const digits = onlyDigits(value);
-    setCep(value);
-    if (digits.length !== 8) return;
-    setCepLoading(true);
-    try {
-      const res = await fetch(`https://viacep.com.br/ws/${digits}/json/`);
-      const data = await res.json();
-      if (!data.erro) {
-        setStreet(data.logradouro || "");
-        setNeighborhood(data.bairro || "");
-        setCity(data.localidade || "");
-        setStateUF(data.uf || "");
-      }
-    } catch {}
-    finally { setCepLoading(false); }
-  }
+  const itemsDetalhados = useMemo(
+    () =>
+      Object.entries(itens)
+        .filter(([, qtd]) => qtd > 0)
+        .map(([codigo, qtd]) => {
+          const p = pmap.get(codigo);
+          return {
+            codigo,
+            descricao: p?.descricao || codigo,
+            preco: Number(p?.preco || 0),
+            qtd,
+            subtotal: Number(p?.preco || 0) * qtd,
+          };
+        }),
+    [itens, pmap]
+  );
 
-  const canSubmit = useMemo(() => {
-    return (
-      name.trim().length > 0 &&
-      onlyDigits(cpf).length === 11 &&
-      onlyDigits(phone).length >= 10 &&
-      isValidEmail(email) &&
-      onlyDigits(cep).length === 8 &&
-      street.trim().length > 0 &&
-      number.trim().length > 0 &&
-      neighborhood.trim().length > 0 &&
-      city.trim().length > 0 &&
-      stateUF.trim().length === 2 &&
-      itemsCount > 0
-    );
-  }, [name, cpf, phone, email, cep, street, number, neighborhood, city, stateUF, itemsCount]);
+  const totalItens = useMemo(
+    () => itemsDetalhados.reduce((a, b) => a + b.qtd, 0),
+    [itemsDetalhados]
+  );
 
-  function fieldStyle(valid: boolean): React.CSSProperties {
-    return {
-      width: "100%",
-      padding: "12px 14px",
-      borderRadius: 12,
-      border: `1px solid ${touched && !valid ? "#ef4444" : "rgba(0,0,0,.15)"}`,
-      background: "#fff",
-      color: "#000",
-      fontSize: 14,
-      fontFamily: "inherit",
-    };
-  }
+  const total = useMemo(
+    () => itemsDetalhados.reduce((a, b) => a + b.subtotal, 0),
+    [itemsDetalhados]
+  );
 
-  function clearForm() {
-    setName("");
-    setCpf("");
-    setPhone("");
-    setEmail("");
-    setCep("");
-    setStreet("");
-    setNumber("");
-    setComplement("");
-    setNeighborhood("");
-    setCity("");
-    setStateUF("");
-  }
-
-  async function submit() {
-    setTouched(true);
+  async function confirmar() {
     setErrorMsg(null);
+    if (!totalItens) return setErrorMsg("Seu carrinho está vazio.");
 
-    const cpfDigits = onlyDigits(cpf);
-    const phoneDigits = onlyDigits(phone);
-    const cepDigits = onlyDigits(cep);
-    const uf = (stateUF || "").trim().toUpperCase();
     const session_id = localStorage.getItem(LS_SESSION_KEY) || "";
-
-    if (!name.trim()) return setErrorMsg("Informe seu nome.");
-    if (cpfDigits.length !== 11) return setErrorMsg("CPF inválido. Informe 11 dígitos.");
-    if (phoneDigits.length < 10 || phoneDigits.length > 13)
-      return setErrorMsg("Telefone inválido. Informe DDD + número.");
-    if (!isValidEmail(email)) return setErrorMsg("E-mail inválido.");
-    if (!itemsCount) return setErrorMsg("Seu carrinho está vazio.");
-
-    // endereço obrigatório
-    if (cepDigits.length !== 8) return setErrorMsg("CEP inválido (8 dígitos).");
-    if (!street.trim()) return setErrorMsg("Informe a rua/avenida.");
-    if (!number.trim()) return setErrorMsg("Informe o número.");
-    if (!neighborhood.trim()) return setErrorMsg("Informe o bairro.");
-    if (!city.trim()) return setErrorMsg("Informe a cidade.");
-    if (uf.length !== 2) return setErrorMsg("UF inválida (ex: CE, SP).");
 
     try {
       setSending(true);
-
       const r = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          session_id,
-          customer: {
-            name: name.trim(),
-            cpf: cpfDigits,
-            phone: phoneDigits,
-            email: email.trim(),
-          },
-          shipping_address: {
-            cep: cepDigits,
-            street: street.trim(),
-            number: number.trim(),
-            complement: complement.trim(),
-            neighborhood: neighborhood.trim(),
-            city: city.trim(),
-            state: uf,
-          },
-          cart: itens,
-        }),
+        body: JSON.stringify({ session_id, cart: itens }),
       });
 
       const data = await r.json();
       if (!r.ok) throw new Error(data?.error || "Falha ao enviar pedido");
 
-      // limpar carrinho e formulário
       localStorage.removeItem(LS_KEY);
-      clearForm();
-
-      // redireciona para página de agradecimento
-      window.location.href = "/obrigado";
+      setPedidoEnviado(true);
     } catch (e: any) {
       setErrorMsg(e?.message || "Erro desconhecido");
     } finally {
@@ -240,8 +145,8 @@ export default function CheckoutPage() {
         <div style={{ padding: "40px 20px", textAlign: "center", display: "flex", flexDirection: "column", gap: 16, alignItems: "center" }}>
           <div style={{ background: "rgba(255,0,0,0.1)", color: "red", padding: "20px", borderRadius: "16px", border: "1px solid red", maxWidth: 400 }}>
             <h2 style={{ fontSize: 22, marginBottom: 12 }}>Tempo Esgotado ⏳</h2>
-            <p style={{ margin: 0, opacity: 0.9 }}>Seu pedido não pode ser finalizado. O limite de tempo (30 minutos) de exclusividade foi atingido.</p>
-            <p style={{ marginTop: 12, fontSize: 14 }}>Por favor, retorne ao WhatsApp e solicite um novo link de atendimento para retomar sua compra.</p>
+            <p style={{ margin: 0, opacity: 0.9 }}>Seu pedido não pode ser finalizado. O limite de tempo (30 minutos) foi atingido.</p>
+            <p style={{ marginTop: 12, fontSize: 14 }}>Retorne ao WhatsApp e solicite um novo link de atendimento.</p>
           </div>
         </div>
       </main>
@@ -261,7 +166,6 @@ export default function CheckoutPage() {
         }}>
           <div style={{
             background: "#fff",
-            border: "1px solid rgba(0,0,0,0.10)",
             borderRadius: 20,
             padding: "36px 28px",
             maxWidth: 400,
@@ -270,15 +174,13 @@ export default function CheckoutPage() {
             display: "flex", flexDirection: "column", alignItems: "center", gap: 16,
           }}>
             <div style={{ fontSize: 56 }}>✅</div>
-            <h2 style={{ margin: 0, fontSize: 22, fontWeight: 800 }}>Pedido enviado!</h2>
+            <h2 style={{ margin: 0, fontSize: 22, fontWeight: 800, color: "#000" }}>Pedido enviado!</h2>
             <p style={{ margin: 0, fontSize: 15, color: "rgba(0,0,0,0.6)", lineHeight: 1.6 }}>
               Seu pedido foi recebido com sucesso.<br />
               Agora <strong style={{ color: "#000" }}>retorne ao WhatsApp</strong> para concluir o pagamento.
             </p>
             <a
               href={WPP_URL}
-              target="_blank"
-              rel="noopener noreferrer"
               style={{
                 marginTop: 8,
                 display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
@@ -297,204 +199,107 @@ export default function CheckoutPage() {
               </svg>
               Ir para o WhatsApp
             </a>
-            <p style={{ margin: 0, fontSize: 13, color: "rgba(255,255,255,0.4)" }}>
+            <p style={{ margin: 0, fontSize: 13, color: "rgba(0,0,0,0.35)" }}>
               Redirecionando automaticamente em {countdown}s...
             </p>
           </div>
         </div>
       )}
 
-      {/* TARJA AZUL COM LOGO */}
-      <div
-        style={{
-          position: "sticky",
-          top: 0,
-          zIndex: 50,
-          background: "#160E79",
-          height: 64,
-          display: "flex",
-          alignItems: "center",
-          padding: "0 16px",
-          borderBottom: "1px solid rgba(255,255,255,0.12)",
-        }}
-      >
-        <a
-          href="/carrinho"
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 12,
-            textDecoration: "none",
-          }}
-        >
-          <img
-            src="/logo-livraria.png"
-            alt="Livraria Shalom"
-            style={{ height: 40, width: 40, objectFit: "contain" }}
-          />
-          <span style={{ color: "#fff", fontWeight: 800, letterSpacing: 0.2 }}>
-            Livraria Shalom
-          </span>
+      {/* TOPBAR */}
+      <div style={{ position: "sticky", top: 0, zIndex: 50, background: "#160E79", height: 64, display: "flex", alignItems: "center", padding: "0 16px", borderBottom: "1px solid rgba(255,255,255,0.12)" }}>
+        <a href="/carrinho" style={{ display: "inline-flex", alignItems: "center", gap: 12, textDecoration: "none" }}>
+          <img src="/logo-livraria.png" alt="Livraria Shalom" style={{ height: 40, width: 40, objectFit: "contain" }} />
+          <span style={{ color: "#fff", fontWeight: 800, letterSpacing: 0.2 }}>Livraria Shalom</span>
         </a>
       </div>
 
-      {/* TOAST VERDE (WINDOW ALERT) */}
-      {toast && (
-        <div
-          style={{
-            position: "fixed",
-            top: 74,
-            left: "50%",
-            transform: "translateX(-50%)",
-            zIndex: 9999,
-            background: "#16a34a",
-            color: "white",
-            padding: "10px 14px",
-            borderRadius: 12,
-            border: "1px solid rgba(255,255,255,0.25)",
-            boxShadow: "0 10px 30px rgba(0,0,0,0.35)",
-            fontWeight: 800,
-          }}
-        >
-          {toast}
-        </div>
-      )}
-
       {/* CONTEÚDO */}
-      <div style={{ padding: 16 }}>
-        <h1 style={{ fontSize: 24, margin: 0 }}>Checkout</h1>
-        <p style={{ marginTop: 8, opacity: 0.85 }}>
-          Informe seus dados para enviar o pedido. ({itemsCount} itens no carrinho)
-        </p>
-
-        {/* Dados do cliente */}
-        <h2 style={{ fontSize: 16, marginTop: 18 }}>Dados do cliente</h2>
-        <div style={{ display: "grid", gap: 10, marginTop: 10 }}>
-          <input
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Nome completo *"
-            style={fieldStyle(name.trim().length > 0)}
-          />
-
-          <input
-            value={cpf}
-            onChange={(e) => setCpf(e.target.value)}
-            placeholder="CPF (somente números) *"
-            inputMode="numeric"
-            maxLength={14}
-            style={fieldStyle(onlyDigits(cpf).length === 11)}
-          />
-
-          <input
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            placeholder="Telefone com DDD (ex: 85999999999) *"
-            inputMode="tel"
-            style={fieldStyle(onlyDigits(phone).length >= 10)}
-          />
-
-          <input
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="E-mail *"
-            inputMode="email"
-            style={fieldStyle(isValidEmail(email))}
-          />
+      <div style={{ padding: 16, display: "flex", flexDirection: "column", gap: 16 }}>
+        <div>
+          <h1 style={{ fontSize: 22, margin: 0 }}>Resumo do pedido</h1>
+          <p style={{ marginTop: 6, opacity: 0.7, fontSize: 14 }}>
+            Confira os itens selecionados antes de confirmar.
+          </p>
         </div>
 
-        {/* Endereço */}
-        <h2 style={{ fontSize: 16, marginTop: 18 }}>Endereço de entrega</h2>
-        <div style={{ display: "grid", gap: 10, marginTop: 10 }}>
-          <div style={{ position: "relative" }}>
-            <input
-              value={cep}
-              onChange={(e) => fetchCep(e.target.value)}
-              placeholder="CEP (8 dígitos) *"
-              inputMode="numeric"
-              maxLength={9}
-              style={fieldStyle(onlyDigits(cep).length === 8)}
-            />
-            {cepLoading && (
-              <span style={{ position: "absolute", right: 14, top: "50%", transform: "translateY(-50%)", fontSize: 12, opacity: 0.6 }}>
-                buscando...
-              </span>
-            )}
+        {/* Lista de itens */}
+        {itemsDetalhados.length === 0 ? (
+          <div style={{ padding: 16, borderRadius: 12, border: "1px solid rgba(255,255,255,0.15)", opacity: 0.6 }}>
+            Seu carrinho está vazio.
           </div>
-
-          <input
-            value={street}
-            onChange={(e) => setStreet(e.target.value)}
-            placeholder="Rua / Avenida *"
-            style={fieldStyle(street.trim().length > 0)}
-          />
-
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-            <input
-              value={number}
-              onChange={(e) => setNumber(e.target.value)}
-              placeholder="Número *"
-              style={fieldStyle(number.trim().length > 0)}
-            />
-            <input
-              value={complement}
-              onChange={(e) => setComplement(e.target.value)}
-              placeholder="Complemento (opcional)"
-              style={fieldStyle(true)}
-            />
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {itemsDetalhados.map((item) => (
+              <div
+                key={item.codigo}
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  background: "rgba(255,255,255,0.05)",
+                  borderRadius: 12,
+                  padding: "12px 14px",
+                  border: "1px solid rgba(255,255,255,0.1)",
+                  gap: 12,
+                }}
+              >
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: 600, fontSize: 14, lineHeight: 1.4 }}>{item.descricao}</div>
+                  <div style={{ fontSize: 12, opacity: 0.6, marginTop: 2 }}>
+                    {item.qtd}x {formatBRL(item.preco)}
+                  </div>
+                </div>
+                <div style={{ fontWeight: 800, fontSize: 15, whiteSpace: "nowrap" }}>
+                  {formatBRL(item.subtotal)}
+                </div>
+              </div>
+            ))}
           </div>
+        )}
 
-          <input
-            value={neighborhood}
-            onChange={(e) => setNeighborhood(e.target.value)}
-            placeholder="Bairro *"
-            style={fieldStyle(neighborhood.trim().length > 0)}
-          />
-
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 120px", gap: 10 }}>
-            <input
-              value={city}
-              onChange={(e) => setCity(e.target.value)}
-              placeholder="Cidade *"
-              style={fieldStyle(city.trim().length > 0)}
-            />
-            <input
-              value={stateUF}
-              onChange={(e) => setStateUF(e.target.value)}
-              placeholder="UF *"
-              maxLength={2}
-              style={{ ...fieldStyle(stateUF.trim().length === 2), textTransform: "uppercase" }}
-            />
+        {/* Total */}
+        {itemsDetalhados.length > 0 && (
+          <div style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            borderTop: "1px solid rgba(255,255,255,0.15)",
+            paddingTop: 12,
+          }}>
+            <span style={{ fontWeight: 700, fontSize: 16 }}>Total ({totalItens} {totalItens === 1 ? "item" : "itens"})</span>
+            <span style={{ fontWeight: 900, fontSize: 20 }}>{formatBRL(total)}</span>
           </div>
-        </div>
+        )}
 
         {errorMsg && (
-          <div style={{ marginTop: 12, padding: 12, border: "1px solid #500", borderRadius: 12 }}>
+          <div style={{ padding: 12, border: "1px solid #500", borderRadius: 12, background: "rgba(255,0,0,0.08)" }}>
             <b>Erro:</b> {errorMsg}
           </div>
         )}
 
-        <div style={{ display: "grid", gap: 10, marginTop: 16 }}>
+        {/* Botões */}
+        <div style={{ display: "grid", gap: 10 }}>
           <button
-            onClick={submit}
-            disabled={sending || !canSubmit}
+            onClick={confirmar}
+            disabled={sending || totalItens === 0}
             style={{
-              padding: "12px 14px",
+              padding: "14px",
               borderRadius: 12,
               border: "none",
-              cursor: sending || !canSubmit ? "not-allowed" : "pointer",
-              opacity: sending || !canSubmit ? 0.45 : 1,
+              cursor: sending || totalItens === 0 ? "not-allowed" : "pointer",
+              opacity: sending || totalItens === 0 ? 0.45 : 1,
               fontWeight: 700,
               background: "#160E79",
               color: "#fff",
-              fontSize: 15,
+              fontSize: 16,
             }}
           >
-            {sending ? "Enviando..." : "Enviar pedido"}
+            {sending ? "Enviando..." : "Confirmar pedido"}
           </button>
 
-          <a href="/carrinho" style={{ textDecoration: "none", opacity: 0.85 }}>
-            ← Voltar ao carrinho
+          <a href="/carrinho" style={{ textDecoration: "none", opacity: 0.75, fontSize: 14 }}>
+            ← Voltar e editar carrinho
           </a>
         </div>
       </div>
