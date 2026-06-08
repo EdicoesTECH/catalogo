@@ -45,6 +45,11 @@ export default function CarrinhoPage() {
   const [isExpired, setIsExpired] = useState(false);
 
   useEffect(() => {
+    // Captura ?phone= da URL e salva no localStorage para usar no checkout
+    const params = new URLSearchParams(window.location.search);
+    const phoneParam = params.get("phone");
+    if (phoneParam) localStorage.setItem("carrinho_customer_phone_v1", phoneParam);
+
     // Detecta se é um clique novo no link (aba/janela nova) via sessionStorage.
     // sessionStorage zera ao abrir aba nova, mas persiste em refresh e navegação interna.
     const jaInicializado = sessionStorage.getItem("carrinho_tab_init");

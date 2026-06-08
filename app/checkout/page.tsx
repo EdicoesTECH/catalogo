@@ -111,14 +111,15 @@ export default function CheckoutPage() {
     setErrorMsg(null);
     if (!totalItens) return setErrorMsg("Seu carrinho está vazio.");
 
-    const session_id = localStorage.getItem(LS_SESSION_KEY) || "";
+    const session_id     = localStorage.getItem(LS_SESSION_KEY) || "";
+    const customer_phone = localStorage.getItem("carrinho_customer_phone_v1") || "";
 
     try {
       setSending(true);
       const r = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ session_id, cart: itens }),
+        body: JSON.stringify({ session_id, customer_phone, cart: itens }),
       });
 
       const data = await r.json();

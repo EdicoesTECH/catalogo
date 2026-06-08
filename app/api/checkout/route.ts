@@ -3,6 +3,7 @@ import { pool } from "@/app/lib/db";
 
 type Body = {
   session_id?: string;
+  customer_phone?: string;
   cart: Record<string, number>;
 };
 
@@ -32,6 +33,8 @@ export async function POST(req: Request) {
     const session_id =
       String(body?.session_id || "").trim() ||
       `sess_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+
+    const customer_phone = String(body?.customer_phone || "").trim();
 
     // Enriquecer itens consultando o banco
     const { rows: produtos } = await pool.query<Produto>(
@@ -74,6 +77,7 @@ export async function POST(req: Request) {
 
     const payload = {
       session_id,
+      customer_phone,
       source: "carrinho-omie",
       timestamp: new Date().toISOString(),
       totals: { items_count, order_total },
