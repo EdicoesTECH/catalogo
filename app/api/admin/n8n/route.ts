@@ -60,6 +60,7 @@ export async function GET(req: Request) {
         lastExecution: last
           ? {
               id: last.id,
+              workflowId: w.id,
               status: last.status,
               startedAt: last.startedAt,
               stoppedAt: last.stoppedAt,

@@ -27,6 +27,7 @@ type N8nExec = {
   status: string;
   startedAt: string;
   stoppedAt: string;
+  workflowId: string;
 } | null;
 
 type N8nWorkflow = {
@@ -458,10 +459,16 @@ export default function AdminPage() {
                             <th style={s.th}>Última execução</th>
                             <th style={s.th}>Resultado</th>
                             <th style={s.th}>Erros recentes</th>
+                            <th style={s.th}></th>
                           </tr>
                         </thead>
                         <tbody>
-                          {wfs.map((wf) => (
+                          {wfs.map((wf) => {
+                            const N8N = "https://applications-n8n.ky0uhm.easypanel.host";
+                            const execUrl = wf.lastExecution
+                              ? `${N8N}/workflow/${wf.id}/executions/${wf.lastExecution.id}`
+                              : `${N8N}/workflow/${wf.id}/executions`;
+                            return (
                             <tr key={wf.id}>
                               <td style={{ ...s.td, paddingLeft: 16 }}>
                                 <span style={{ fontWeight: 600, fontSize: 13 }}>{wf.name}</span>
@@ -518,8 +525,25 @@ export default function AdminPage() {
                                   <span style={{ color: "#16a34a", fontSize: 12 }}>✓</span>
                                 )}
                               </td>
+                              <td style={{ ...s.td, whiteSpace: "nowrap" as const }}>
+                                <a
+                                  href={execUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  style={{
+                                    fontSize: 11,
+                                    color: wf.lastExecution?.status === "error" ? "#dc2626" : "#160E79",
+                                    textDecoration: "none",
+                                    fontWeight: 600,
+                                    opacity: 0.8,
+                                  }}
+                                >
+                                  {wf.lastExecution?.status === "error" ? "🔴 Ver erro →" : "Ver →"}
+                                </a>
+                              </td>
                             </tr>
-                          ))}
+                            );
+                          })}
                         </tbody>
                       </table>
                     </div>
