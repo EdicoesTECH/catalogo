@@ -97,22 +97,18 @@ export async function POST(req: Request) {
     pool.query(
       `INSERT INTO pedidos_log (session_id, customer_phone, items_count, order_total, status)
        VALUES ($1, $2, $3, $4, 'ok')`,
-      [session_id, phone, items_count, order_total]
+      [session_id, customer_phone, items_count, order_total]
     ).catch(() => {});
 
     return NextResponse.json({ ok: true, totals: payload.totals });
   } catch (err: any) {
     const msg = err?.message || "Erro ao enviar";
 
-    // Tenta logar o erro também
-    try {
-      const body2 = (err as any)?._body;
-      pool.query(
-        `INSERT INTO pedidos_log (session_id, customer_phone, items_count, order_total, status, error_msg)
-         VALUES ($1, $2, $3, $4, 'error', $5)`,
-        ["", "", 0, 0, msg]
-      ).catch(() => {});
-    } catch {}
+    pool.query(
+      `INSERT INTO pedidos_log (session_id, customer_phone, items_count, order_total, status, error_msg)
+       VALUES ($1, $2, $3, $4, 'error', $5)`,
+      ["", "", 0, 0, msg]
+    ).catch(() => {});
 
     return NextResponse.json({ error: msg }, { status: 500 });
   }
