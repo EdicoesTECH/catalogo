@@ -1,0 +1,19 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "sh82-dev",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "C:\\Users\\EDIEST~1\\Documents\\2026\\SH82", "run", "dev", "--", "--webpack"],
+      "port": 3000,
+      "autoPort": true
+    },
+    {
+      "name": "livraria-shalom-dev",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "C:\\Users\\EDIEST~1\\DOCUME~1\\2026\\LIVRAR~1", "run", "dev", "--", "--webpack"],
+      "port": 3000,
+      "autoPort": true
+    }
+  ]
+}
