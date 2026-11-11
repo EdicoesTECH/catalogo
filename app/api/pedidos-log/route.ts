@@ -4,8 +4,10 @@ import { pool } from "@/app/lib/db";
 export const dynamic = "force-dynamic";
 
 export async function GET(req: Request) {
-  const token = new URL(req.url).searchParams.get("token");
-  if (!process.env.ADMIN_SECRET || token !== process.env.ADMIN_SECRET) {
+  const secret = process.env.ADMIN_SECRET;
+  const chave = new URL(req.url).searchParams.get("chave");
+
+  if (!secret || chave !== secret) {
     return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
   }
 
