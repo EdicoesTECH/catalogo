@@ -16,7 +16,7 @@ export async function GET(req: Request) {
            status, error_msg, created_at
     FROM pedidos_log
     ORDER BY created_at DESC
-    LIMIT 50
+    LIMIT 200
   `);
 
   return NextResponse.json({ pedidos: rows });
