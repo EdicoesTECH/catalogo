@@ -24,8 +24,8 @@ export async function GET(req: Request) {
       updated_at,
       CASE
         WHEN status IN ('paid', 'completed', 'confirmed') THEN 'pago'
-        WHEN total_geral IS NOT NULL              THEN 'aguarda_pagamento'
-        WHEN frete IS NOT NULL                   THEN 'frete_cotado'
+        WHEN total_geral > 0                       THEN 'aguarda_pagamento'
+        WHEN frete > 0                            THEN 'frete_cotado'
         ELSE                                          'carrinho_aberto'
       END AS etapa
     FROM carts
