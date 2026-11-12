@@ -11,6 +11,10 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
   }
 
+  await pool.query(`
+    ALTER TABLE carts ADD COLUMN IF NOT EXISTS assumido_em TIMESTAMPTZ
+  `).catch(() => {});
+
   const { rows } = await pool.query(`
     SELECT
       customer_phone,
@@ -22,6 +26,7 @@ export async function GET(req: Request) {
       total_geral,
       transportadora_codigo_omie,
       updated_at,
+      assumido_em,
       CASE
         WHEN status IN ('paid', 'completed', 'confirmed') THEN 'pago'
         WHEN total_geral > 0                       THEN 'aguarda_pagamento'
